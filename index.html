@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="A minimal weighted and unweighted GPA calculator." />
+  <title>GPA</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230A0A0C'/><text y='72' x='50' text-anchor='middle' font-size='56' font-family='system-ui' fill='%23F5F1E8'>4</text></svg>" />
+</head>
+<body>
+  <!-- Ambient background wash -->
+  <div class="ambience" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="grain"></span>
+  </div>
+
+  <main class="page">
+
+    <!-- ── Header ───────────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="brand">
+        <h1 class="brand-title">GPA</h1>
+        <p class="brand-sub">Weighted &amp; unweighted, in real time</p>
+      </div>
+
+      <button id="themeToggle" class="icon-btn glass" type="button"
+              aria-label="Switch color theme" title="Switch theme">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"
+                fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linejoin="round" />
+        </svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2" />
+            <path d="M5.4 5.4 7 7M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6" />
+          </g>
+        </svg>
+      </button>
+    </header>
+
+    <!-- ── Score readouts ───────────────────────────────────────── -->
+    <section class="scores" aria-label="Current GPA">
+      <article class="score-card glass is-primary">
+        <header class="score-head">
+          <h2 class="score-label">Weighted</h2>
+          <span class="score-scale" id="weightedScale">/ 5.0</span>
+        </header>
+        <p class="score-value" id="weightedValue" aria-live="polite">0.00</p>
+        <div class="meter" role="presentation"><span class="meter-fill" id="weightedMeter"></span></div>
+        <p class="score-foot" id="weightedFoot">Includes Honors, AP and IB boosts</p>
+      </article>
+
+      <article class="score-card glass">
+        <header class="score-head">
+          <h2 class="score-label">Unweighted</h2>
+          <span class="score-scale">/ 4.0</span>
+        </header>
+        <p class="score-value" id="unweightedValue" aria-live="polite">0.00</p>
+        <div class="meter" role="presentation"><span class="meter-fill" id="unweightedMeter"></span></div>
+        <p class="score-foot" id="unweightedFoot">No classes yet</p>
+      </article>
+    </section>
+
+    <!-- ── Add a class ──────────────────────────────────────────── -->
+    <section class="composer glass" aria-label="Add a class">
+      <form id="addForm" novalidate>
+        <div class="composer-grid">
+
+          <div class="field field-name">
+            <label class="field-label" for="nameInput">Class</label>
+            <input id="nameInput" class="input" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="e.g. AP World History" maxlength="60" />
+          </div>
+
+          <div class="field field-grade">
+            <div class="field-label-row">
+              <label class="field-label" for="letterInput">Grade</label>
+              <div class="segmented" id="modeSwitch" data-mode="letter">
+                <span class="seg-thumb" aria-hidden="true"></span>
+                <button class="seg is-active" type="button" data-mode="letter"
+                        aria-pressed="true">Letter</button>
+                <button class="seg" type="button" data-mode="percent"
+                        aria-pressed="false">Number</button>
+              </div>
+            </div>
+
+            <div class="grade-inputs">
+              <div class="select-wrap" id="letterWrap">
+                <select id="letterInput" class="input select" aria-label="Letter grade"></select>
+              </div>
+              <div class="percent-wrap is-hidden" id="percentWrap">
+                <input id="percentInput" class="input" type="number" inputmode="decimal"
+                       min="0" max="100" step="0.1" placeholder="94" aria-label="Numeric grade" />
+                <span class="percent-suffix" aria-hidden="true">%</span>
+                <span class="percent-hint" id="percentHint">A</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field field-type">
+            <label class="field-label" for="typeInput">Type</label>
+            <div class="select-wrap">
+              <select id="typeInput" class="input select" aria-label="Class type"></select>
+            </div>
+          </div>
+
+          <div class="field field-submit">
+            <button class="btn btn-primary" type="submit">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5.5v13M5.5 12h13" stroke="currentColor" stroke-width="1.9"
+                      stroke-linecap="round" />
+              </svg>
+              <span>Add class</span>
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </section>
+
+    <!-- ── Class list ───────────────────────────────────────────── -->
+    <section class="courses glass" aria-label="Your classes">
+      <header class="courses-head">
+        <h2 class="courses-title">Classes <span class="count-pill" id="countPill">0</span></h2>
+        <button id="clearAll" class="btn btn-ghost btn-sm" type="button" hidden>Clear all</button>
+      </header>
+
+      <div class="table-head" aria-hidden="true">
+        <span>Class</span>
+        <span>Grade</span>
+        <span>Type</span>
+        <span class="ta-right">Points</span>
+        <span></span>
+      </div>
+
+      <ul class="rows" id="rows"></ul>
+
+      <div class="empty" id="empty">
+        <div class="empty-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h9" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round" fill="none" />
+          </svg>
+        </div>
+        <p class="empty-title">No classes yet</p>
+        <p class="empty-sub">Add your first class above to see your GPA.</p>
+      </div>
+    </section>
+
+    <!-- ── Reference ────────────────────────────────────────────── -->
+    <details class="reference glass">
+      <summary>
+        <span>Grade scale &amp; weighting</span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m8 10 4 4 4-4" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+      </summary>
+      <div class="reference-body">
+        <div class="ref-block">
+          <h3>Grade points</h3>
+          <ul class="chips" id="scaleChips"></ul>
+        </div>
+        <div class="ref-block">
+          <h3>Weighted boosts</h3>
+          <ul class="chips" id="boostChips"></ul>
+          <p class="ref-note">
+            Boosts apply to the weighted GPA only. A failing grade earns no boost,
+            and every class counts equally.
+          </p>
+        </div>
+      </div>
+    </details>
+
+    <p class="fineprint">Saved on this device. Scales vary by school — check yours.</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/gpa.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
