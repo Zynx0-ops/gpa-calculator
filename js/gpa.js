@@ -10,7 +10,7 @@
    * `min` is the lowest percentage that still earns this letter.
    * ------------------------------------------------------------------ */
   var GRADE_SCALE = [
-    { letter: 'A+', points: 4.0, min: 97 },
+    { letter: 'A+', points: 4.33, min: 97 },
     { letter: 'A',  points: 4.0, min: 93 },
     { letter: 'A-', points: 3.7, min: 90 },
     { letter: 'B+', points: 3.3, min: 87 },
@@ -46,7 +46,9 @@
   }, {});
 
   /** Highest GPA reachable on each scale — used for the meter fills. */
-  var MAX_UNWEIGHTED = 4.0;
+  var MAX_UNWEIGHTED = GRADE_SCALE.reduce(function (max, g) {
+    return Math.max(max, g.points);
+  }, 0);
   var MAX_WEIGHTED = CLASS_TYPES.reduce(function (max, t) {
     return Math.max(max, MAX_UNWEIGHTED + t.boost);
   }, MAX_UNWEIGHTED);
@@ -95,9 +97,13 @@
     return base + boostForType(course && course.type);
   }
 
-  /** Round to two decimals without floating-point drift. */
-  function round2(n) {
-    return Math.round((n + Number.EPSILON) * 100) / 100;
+  /** Decimal places each GPA is calculated and displayed to. */
+  var PRECISION = { weighted: 3, unweighted: 2 };
+
+  /** Round to `places` decimals without floating-point drift. */
+  function roundTo(n, places) {
+    var factor = Math.pow(10, places);
+    return Math.round((n + Number.EPSILON) * factor) / factor;
   }
 
   /**
@@ -129,10 +135,10 @@
 
     return {
       count: count,
-      unweighted: round2(unweightedTotal / count),
-      weighted: round2(weightedTotal / count),
-      unweightedTotal: round2(unweightedTotal),
-      weightedTotal: round2(weightedTotal)
+      unweighted: roundTo(unweightedTotal / count, PRECISION.unweighted),
+      weighted: roundTo(weightedTotal / count, PRECISION.weighted),
+      unweightedTotal: roundTo(unweightedTotal, 2),
+      weightedTotal: roundTo(weightedTotal, 2)
     };
   }
 
@@ -141,6 +147,7 @@
     CLASS_TYPES: CLASS_TYPES,
     MAX_UNWEIGHTED: MAX_UNWEIGHTED,
     MAX_WEIGHTED: MAX_WEIGHTED,
+    PRECISION: PRECISION,
     letterFromPercent: letterFromPercent,
     pointsForLetter: pointsForLetter,
     boostForType: boostForType,
@@ -148,6 +155,6 @@
     weightedPoints: weightedPoints,
     calculate: calculate,
     clamp: clamp,
-    round2: round2
+    roundTo: roundTo
   };
 })(window);

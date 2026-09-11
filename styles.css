@@ -382,7 +382,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .composer-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 200px 148px auto;
+  grid-template-columns: minmax(0, 1fr) 200px 164px auto;
   gap: clamp(10px, 1.6vw, 14px);
   align-items: end;
 }
@@ -877,7 +877,7 @@ button, input, select { font: inherit; color: inherit; }
 /* --- Responsive ----------------------------------------------------------- */
 
 @media (max-width: 860px) {
-  .composer-grid { grid-template-columns: minmax(0, 1fr) 148px; }
+  .composer-grid { grid-template-columns: minmax(0, 1fr) 164px; }
   .field-name { grid-column: 1 / -1; }
   .field-submit { grid-column: 1 / -1; }
   .field-submit .btn { width: 100%; }
@@ -908,6 +908,8 @@ button, input, select { font: inherit; color: inherit; }
   .del        { grid-area: del; opacity: 1; justify-self: end; }
 
   .row .input { background: var(--field); border-color: var(--stroke-soft); }
+  .row .select { padding-left: 10px; padding-right: 25px; }
+  .row .select-wrap::after { right: 10px; }
   .reference-body { grid-template-columns: 1fr; }
 }
 

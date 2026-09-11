@@ -23,6 +23,7 @@
     weightedFoot: $('weightedFoot'),
     unweightedFoot: $('unweightedFoot'),
     weightedScale: $('weightedScale'),
+    unweightedScale: $('unweightedScale'),
     addForm: $('addForm'),
     nameInput: $('nameInput'),
     letterInput: $('letterInput'),
@@ -120,18 +121,25 @@
    * Option builders
    * ------------------------------------------------------------------ */
 
-  function gradeOptionsHTML(selected) {
-    return GPA.GRADE_SCALE.map(function (g) {
-      return '<option value="' + g.letter + '"' +
-        (g.letter === selected ? ' selected' : '') + '>' +
-        g.letter + ' &nbsp;·&nbsp; ' + g.points.toFixed(1) + '</option>';
-    }).join('');
+  /** Grade points with as many decimals as they need: 4.0, 3.7, 4.33. */
+  function formatPoints(n) {
+    var two = n.toFixed(2);
+    return two.charAt(two.length - 1) === '0' ? n.toFixed(1) : two;
   }
 
   /**
-   * `withBoost` spells out the weight in the composer, where there is room.
-   * Rows omit it — their points column already shows the boosted value.
+   * The composer spells out each grade's points and each type's boost.
+   * Rows omit both — their points column already shows the result, and
+   * phone-width cells have no room for the longer labels.
    */
+  function gradeOptionsHTML(selected, withPoints) {
+    return GPA.GRADE_SCALE.map(function (g) {
+      var points = withPoints ? ' &nbsp;·&nbsp; ' + formatPoints(g.points) : '';
+      return '<option value="' + g.letter + '"' +
+        (g.letter === selected ? ' selected' : '') + '>' + g.letter + points + '</option>';
+    }).join('');
+  }
+
   function typeOptionsHTML(selected, withBoost) {
     return GPA.CLASS_TYPES.map(function (t) {
       var boost = withBoost && t.boost > 0 ? ' &nbsp;·&nbsp; +' + t.boost.toFixed(1) : '';
@@ -142,7 +150,7 @@
 
   function buildReference() {
     el.scaleChips.innerHTML = GPA.GRADE_SCALE.map(function (g) {
-      return '<li><b>' + g.letter + '</b><span>' + g.points.toFixed(1) + '</span></li>';
+      return '<li><b>' + g.letter + '</b><span>' + formatPoints(g.points) + '</span></li>';
     }).join('');
 
     el.boostChips.innerHTML = GPA.CLASS_TYPES.map(function (t) {
@@ -165,8 +173,8 @@
     var weighted = GPA.weightedPoints(course);
     var unweighted = GPA.unweightedPoints(course);
     var boosted = weighted > unweighted;
-    return '<span class="pts-w">' + weighted.toFixed(1) + '</span>' +
-      '<span class="pts-u">' + (boosted ? unweighted.toFixed(1) + ' base' : 'unweighted') + '</span>';
+    return '<span class="pts-w">' + formatPoints(weighted) + '</span>' +
+      '<span class="pts-u">' + (boosted ? formatPoints(unweighted) + ' base' : 'unweighted') + '</span>';
   }
 
   function buildRow(course) {
@@ -317,7 +325,7 @@
    * background tabs and occluded windows, so a timer guarantees the final
    * value always lands.
    */
-  function tweenValue(node, key, target) {
+  function tweenValue(node, key, target, decimals) {
     var state = tweens[key] || (tweens[key] = { value: 0, raf: 0, guard: 0 });
     var from = state.value;
     var duration = 520;
@@ -331,10 +339,11 @@
       state.raf = 0;
       state.guard = 0;
       state.value = target;
-      node.textContent = target.toFixed(2);
+      node.textContent = target.toFixed(decimals);
     };
 
-    if (reduceMotion.matches || document.hidden || Math.abs(target - from) < 0.005) {
+    if (reduceMotion.matches || document.hidden ||
+        Math.abs(target - from) < 0.5 * Math.pow(10, -decimals)) {
       settle();
       return;
     }
@@ -345,7 +354,7 @@
       var t = Math.min(1, (now - start) / duration);
       var eased = 1 - Math.pow(1 - t, 4); // easeOutQuart
       if (t < 1) {
-        node.textContent = (from + (target - from) * eased).toFixed(2);
+        node.textContent = (from + (target - from) * eased).toFixed(decimals);
         state.raf = requestAnimationFrame(step);
       } else {
         settle();
@@ -359,12 +368,11 @@
   function updateScores() {
     var result = GPA.calculate(courses);
 
-    tweenValue(el.weightedValue, 'weighted', result.weighted);
-    tweenValue(el.unweightedValue, 'unweighted', result.unweighted);
+    tweenValue(el.weightedValue, 'weighted', result.weighted, GPA.PRECISION.weighted);
+    tweenValue(el.unweightedValue, 'unweighted', result.unweighted, GPA.PRECISION.unweighted);
 
-    el.weightedMeter.style.width = (result.weighted / GPA.MAX_WEIGHTED * 100) + '%';
-    el.unweightedMeter.style.width = (result.unweighted / GPA.MAX_UNWEIGHTED * 100) + '%';
-    el.weightedScale.textContent = '/ ' + GPA.MAX_WEIGHTED.toFixed(1);
+    el.weightedMeter.style.width = meterWidth(result.weighted, GPA.MAX_WEIGHTED);
+    el.unweightedMeter.style.width = meterWidth(result.unweighted, GPA.MAX_UNWEIGHTED);
 
     var boosted = courses.filter(function (c) { return GPA.boostForType(c.type) > 0; }).length;
 
@@ -377,7 +385,11 @@
     el.unweightedFoot.textContent = result.count === 0
       ? 'No classes yet'
       : result.count + ' class' + (result.count === 1 ? '' : 'es') +
-        ' · ' + result.unweightedTotal.toFixed(1) + ' total points';
+        ' · ' + formatPoints(result.unweightedTotal) + ' total points';
+  }
+
+  function meterWidth(value, max) {
+    return GPA.clamp(value / max * 100, 0, 100) + '%';
   }
 
   function updateChrome() {
@@ -517,9 +529,11 @@
 
   function init() {
     initTheme();
-    el.letterInput.innerHTML = gradeOptionsHTML('A');
+    el.letterInput.innerHTML = gradeOptionsHTML('A', true);
     el.typeInput.innerHTML = typeOptionsHTML('regular', true);
     buildReference();
+    el.weightedScale.textContent = '/ ' + formatPoints(GPA.MAX_WEIGHTED);
+    el.unweightedScale.textContent = '/ ' + formatPoints(GPA.MAX_UNWEIGHTED);
     setMode('letter');
 
     courses = load();
